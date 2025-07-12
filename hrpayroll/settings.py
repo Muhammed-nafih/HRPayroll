@@ -5,27 +5,25 @@ Django settings for hrpayroll project.
 import os
 from pathlib import Path
 
+import dj_database_url   # make sure to `pip install dj-database-url`
+
 # ─── BASE DIRECTORY ─────────────────────────────────────────────────────────────
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ─── SECURITY ───────────────────────────────────────────────────────────────────
 
-# Use an env var in production; fallback to your local secret if absent
 SECRET_KEY = os.getenv(
     'SECRET_KEY',
     'django-insecure-t+_zns-6f_*a!u0=t(#!^m&7rnmko71*eo_a@&pt#i(&nnw54('
 )
 
-# Turn DEBUG off in prod by setting DEBUG=False in env
 DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1')
 
-# Hosts/domain names that are valid for this site
 if DEBUG:
     ALLOWED_HOSTS = []
 else:
-    _hosts = os.getenv('ALLOWED_HOSTS', '')
-    ALLOWED_HOSTS = _hosts.split(',') if _hosts else []
+    ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 
 # ─── APPLICATION DEFINITION ────────────────────────────────────────────────────
 
@@ -36,14 +34,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
     'hr',  # your custom app
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-
-    # WhiteNoise for serving static files in production
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # serve static files
 
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -58,7 +55,6 @@ ROOT_URLCONF = 'hrpayroll.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        # point to your project-level templates folder
         'DIRS': [ BASE_DIR / 'templates' ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -74,28 +70,16 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'hrpayroll.wsgi.application'
 
-# ─── DATABASES ─────────────────────────────────────────────────────────────────
+# ─── DATABASE CONFIGURATION ────────────────────────────────────────────────────
 
-if DEBUG:
-    # Local development with SQLite
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
-else:
-    # Production with Postgres (set these env vars on Render)
-    DATABASES = {
-        'default': {
-            'ENGINE':   'django.db.backends.postgresql',
-            'NAME':     os.getenv('DB_NAME'),
-            'USER':     os.getenv('DB_USER'),
-            'PASSWORD': os.getenv('DB_PASS'),
-            'HOST':     os.getenv('DB_HOST'),
-            'PORT':     os.getenv('DB_PORT', '5432'),
-        }
-    }
+# Read DATABASE_URL, or fallback to SQLite in BASE_DIR/db.sqlite3
+DATABASES = {
+    'default': dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=600,
+        ssl_require=not DEBUG
+    )
+}
 
 # ─── PASSWORD VALIDATION ───────────────────────────────────────────────────────
 
@@ -123,18 +107,9 @@ USE_TZ = True
 
 # ─── STATIC FILES ──────────────────────────────────────────────────────────────
 
-# URL prefix for static files
 STATIC_URL = '/static/'
-
-# Where collectstatic will gather static files
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-
-# Additional locations to find static files (e.g. your local /static/ folder)
-STATICFILES_DIRS = [
-    BASE_DIR / 'static',
-]
-
-# Use WhiteNoise’s compressed manifest storage backend in production
+STATICFILES_DIRS = [ BASE_DIR / 'static' ]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # ─── DEFAULT AUTO FIELD ────────────────────────────────────────────────────────
@@ -146,12 +121,3 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = '/'
 LOGIN_REDIRECT_URL = '/'       # or '/dashboard/'
 LOGOUT_REDIRECT_URL = '/'
-
-# ─── OPTIONAL EMAIL (for password reset) ───────────────────────────────────────
-
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST        = os.getenv('EMAIL_HOST')
-# EMAIL_PORT        = os.getenv('EMAIL_PORT')
-# EMAIL_HOST_USER   = os.getenv('EMAIL_USER')
-# EMAIL_HOST_PASSWORD = os.getenv('EMAIL_PASSWORD')
-# EMAIL_USE_TLS     = True
