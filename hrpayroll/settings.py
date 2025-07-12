@@ -20,10 +20,9 @@ SECRET_KEY = os.getenv(
 
 DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1')
 
-if DEBUG:
-    ALLOWED_HOSTS = []
-else:
-    ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
+
+ALLOWED_HOSTS = ['.onrender.com']
+
 
 # ─── APPLICATION DEFINITION ────────────────────────────────────────────────────
 
